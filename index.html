@@ -356,6 +356,15 @@ const CITIES = [
 
 CITIES.forEach(c => { c.count = c.schools.reduce((n,s)=>n+s[1].length,0); });
 CITIES.sort((a,b)=> b.count - a.count || a.city.localeCompare(b.city,'zh'));
+// 把吉林市挪到长春后面，让同省城市排在一起
+var _cc=-1, _jl=-1, _i;
+for(_i=0;_i<CITIES.length;_i++){
+  if(CITIES[_i].city==='长春') _cc=_i;
+  if(CITIES[_i].city==='吉林市') _jl=_i;
+}
+if(_cc>=0 && _jl>=0 && _jl!==_cc+1){
+  CITIES.splice(_cc+1, 0, CITIES.splice(_jl, 1)[0]);
+}
 CITIES.forEach((c,i)=>{ c.idx = i; }); // 排序后重新编号，保证名单/地图索引一致
 
 /* ================= 统计 ================= */
