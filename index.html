@@ -82,6 +82,8 @@
     overflow:hidden; /* 兜底：任何情况下提示框等浮层不得撑出横向滚动 */
   }
   #map{ width:100%; height:100%; min-height:520px; border-radius:16px; }
+  /* 地图手势完全交给 ECharts：禁止浏览器抢走双指缩放/页面缩放，避免与地图缩放叠加导致大小跳动、散点脱离地图 */
+  #map canvas{ touch-action:none; }
 
   /* 地图图例 */
   .legend{
@@ -211,7 +213,7 @@
       <span class="item"><span class="dot" style="width:19px;height:19px;background:#C94532"></span>4–6</span>
       <span class="item"><span class="dot" style="width:24px;height:24px;background:#A83020"></span>7+</span>
     </div>
-    <div class="map-tip" id="map-tip">🔍 滚动 / 双指缩放地图，放大后显示城市标注</div>
+    <div class="map-tip" id="map-tip">🔍 拖动平移 · 滚动/双指缩放地图，放大后显示城市标注</div>
   </div>
 
   <aside id="list">
@@ -493,13 +495,25 @@ function updateMapLabels(){
   setLabels(!collide);
 }
 
-let rafId = null;
+/* 标注更新绝不在拖动/捏合过程中执行：roam 途中 setOption 重绘会与手势状态竞争，
+   导致散点层与地图层不同步（红点脱离地图被拖动）、缩放跳动。
+   改为手势结束（或停顿 200ms）后再计算标注显隐。 */
+let labelTimer = null;
 function scheduleLabels(){
-  if(rafId != null) return;
-  rafId = requestAnimationFrame(()=>{ rafId = null; updateMapLabels(); });
+  if(labelTimer) clearTimeout(labelTimer);
+  labelTimer = setTimeout(()=>{ labelTimer = null; updateMapLabels(); }, 200);
+}
+function flushLabels(){
+  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
+  updateMapLabels();
 }
 
 chart.on('georoam', scheduleLabels);
+const mapEl = document.getElementById('map');
+['touchstart','mousedown'].forEach(ev => mapEl.addEventListener(ev, ()=>{
+  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
+}));
+['touchend','touchcancel','mouseup'].forEach(ev => mapEl.addEventListener(ev, flushLabels));
 window.addEventListener('resize', ()=>{
   chart.dispatchAction({ type:'hideTip' }); // 先收起提示框，避免旧尺寸下错位残留造成横向溢出
   chart.resize();
