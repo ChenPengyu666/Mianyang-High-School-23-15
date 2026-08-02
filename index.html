@@ -121,8 +121,8 @@
   }
   #dot-overlay.dragging .city-dot{ pointer-events:none; } /* 手机拖拽时红点不拦截手势 */
   .city-dot{
-    position:absolute; left:0; top:0; transform:translate(-50%,-50%);
-    pointer-events:auto; cursor:pointer; will-change:left,top;
+    position:absolute; left:0; top:0; transform:translate3d(-50%,-50%,0);
+    pointer-events:auto; cursor:pointer; will-change:transform;
   }
   .city-dot .dot-circle{
     border-radius:50%; border:2px solid #fff;
@@ -381,8 +381,8 @@ function markerSize(n){
 
 /* ================= 地图 ================= */
 echarts.registerMap('china', window.CHINA_GEO);
-/* svg 渲染器：地图用矢量绘制，roam 时整体变换，不会出现 canvas 多层失步 */
-const chart = echarts.init(document.getElementById('map'), null, { renderer:'svg' });
+/* canvas 渲染器 + useDirtyRect：roam 时整帧重绘成本更低，移动端双指缩放更跟手 */
+const chart = echarts.init(document.getElementById('map'), null, { renderer:'canvas', useDirtyRect:true });
 
 /* 只用 geo 组件画地图，不再用 scatter 系列。
    红点改为 DOM 覆盖层——每次 georoam 时用 convertToPixel 算出像素坐标，
@@ -432,7 +432,7 @@ const dotEls = CITIES.map(c => {
     el.classList.remove('active');
     if(!tooltipSticky) hideTooltip();
   });
-  return el;
+  return { el:el, circle:circle };
 });
 
 function showTooltip(c, anchorEl){
@@ -480,6 +480,8 @@ function getGeoZoom(){
   return (chart.getOption().geo && chart.getOption().geo[0] && chart.getOption().geo[0].zoom) || 1;
 }
 
+const mapTip = document.getElementById('map-tip');
+let _mapTipShown = false;
 function updateDots(){
   const zoom = getGeoZoom();
   const w = chart.getWidth(), h = chart.getHeight();
@@ -488,22 +490,25 @@ function updateDots(){
 
   CITIES.forEach((c, i) => {
     const p = chart.convertToPixel({ geoIndex:0 }, c.coords);
-    const el = dotEls[i];
+    const item = dotEls[i], el = item.el, circle = item.circle;
     if(p && isFinite(p[0]) && isFinite(p[1])){
-      el.style.left = p[0] + 'px';
-      el.style.top = p[1] + 'px';
+      /* transform 定位走合成层，避免每帧改 left/top 触发布局 */
+      el.style.transform = 'translate3d(' + p[0] + 'px,' + p[1] + 'px,0) translate(-50%,-50%)';
       const visible = p[0] > -60 && p[0] < w + 60 && p[1] > -60 && p[1] < h + 60;
-      el.style.display = visible ? '' : 'none';
+      if(visible !== el._v){ el.style.display = visible ? '' : 'none'; el._v = visible; }
       const sz = Math.round(markerSize(c.count) * scaleFactor);
-      const circle = el.querySelector('.dot-circle');
-      circle.style.width = circle.style.height = sz + 'px';
-      el.classList.toggle('show-label', showLabels && visible);
-    } else {
+      if(sz !== circle._s){ circle.style.width = circle.style.height = sz + 'px'; circle._s = sz; }
+      const showLabel = showLabels && visible;
+      if(showLabel !== el._l){ el.classList.toggle('show-label', showLabel); el._l = showLabel; }
+    } else if(el._v !== false){
       el.style.display = 'none';
+      el._v = false;
     }
   });
-  const tip = document.getElementById('map-tip');
-  if(tip) tip.classList.toggle('hide', showLabels);
+  if(showLabels !== _mapTipShown){
+    _mapTipShown = showLabels;
+    mapTip.classList.toggle('hide', showLabels);
+  }
 }
 
 /* RAF 节流：连续 georoam 时合并 DOM 更新到一个帧，避免双指缩放掉帧 */
@@ -516,12 +521,20 @@ function scheduleUpdateDots(){
   });
 }
 /* 地图每次 roam 时：收起提示框、解除 sticky 状态、节流刷新红点 */
-let _zoomTimer = null;
-/* 缩放/拖拽开始时添加 .zooming 类禁用过渡，结束后 400ms 移除 */
+let _lastZoomAt = 0, _zoomCheckRAF = null;
+/* 缩放/拖拽开始时禁用过渡，最后一次 roam 后 250ms 再恢复，避免每帧重建定时器 */
 function _markZooming(){
-  if(!_zoomTimer) overlay.classList.add('zooming');
-  clearTimeout(_zoomTimer);
-  _zoomTimer = setTimeout(() => { overlay.classList.remove('zooming'); _zoomTimer = null; }, 400);
+  _lastZoomAt = performance.now();
+  overlay.classList.add('zooming');
+  if(_zoomCheckRAF) return;
+  (function tick(){
+    if(performance.now() - _lastZoomAt > 250){
+      overlay.classList.remove('zooming');
+      _zoomCheckRAF = null;
+      return;
+    }
+    _zoomCheckRAF = requestAnimationFrame(tick);
+  })();
 }
 chart.on('georoam', () => { hideTooltip(); tooltipSticky = false; scheduleUpdateDots(); _markZooming(); });
 
@@ -545,7 +558,7 @@ function flyToCity(c){
   requestAnimationFrame(() => {
    updateDots();
    tooltipSticky = true;
-   showTooltip(c, dotEls[c.idx]);
+   showTooltip(c, dotEls[c.idx].el);
  });
 setTimeout(updateDots, 300);
 setTimeout(updateDots, 800);
