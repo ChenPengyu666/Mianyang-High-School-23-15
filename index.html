@@ -506,7 +506,7 @@ const mapBox = document.getElementById('map-box');
 mapBox.addEventListener('touchstart', () => overlay.classList.add('dragging'), { passive:true });
 mapBox.addEventListener('touchend', () => overlay.classList.remove('dragging'));
 mapBox.addEventListener('touchcancel', () => overlay.classList.remove('dragging'));
-document.addEventListener('touchmove', hideTooltip, { passive:true });
+mapBox.addEventListener('touchmove', hideTooltip, { passive:true, capture:true });
 
 window.addEventListener('resize', () => {
   chart.resize();
