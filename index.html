@@ -107,7 +107,40 @@
     pointer-events:none;
     transition:opacity .35s ease, transform .35s ease;
   }
-  .map-tip.hide{ opacity:0; transform:translateY(-8px); }
+ .map-tip.hide{ opacity:0; transform:translateY(-8px); }
+
+  /* ---------- DOM 红点覆盖层 ---------- */
+  /* 红点不用 ECharts scatter（独立画布/SVG 层在手势中与 geo 可能失步导致错位），
+     改为 DOM 元素，georoam 后用 convertToPixel 直接计算像素坐标定位，从根本上保证同步 */
+  #dot-overlay{
+    position:absolute; inset:0; z-index:6; pointer-events:none;
+  }
+  #dot-overlay.dragging .city-dot{ pointer-events:none; } /* 手机拖拽时红点不拦截手势 */
+  .city-dot{
+    position:absolute; left:0; top:0; transform:translate(-50%,-50%);
+    pointer-events:auto; cursor:pointer; will-change:left,top;
+  }
+  .city-dot .dot-circle{
+    border-radius:50%; border:2px solid #fff;
+    box-shadow:0 0 0 1px rgba(160,60,40,.25),0 2px 8px rgba(160,60,40,.35);
+    transition:transform .15s ease;
+  }
+  .city-dot:hover .dot-circle, .city-dot.active .dot-circle{ transform:scale(1.3); }
+  .city-dot .dot-label{
+    position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    margin-top:5px; white-space:nowrap; font-size:12px; font-weight:600;
+    color:#6B5A48;
+    text-shadow:0 0 4px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.95);
+    pointer-events:none; opacity:0; transition:opacity .25s ease;
+  }
+  .city-dot.show-label .dot-label{ opacity:1; }
+
+  #custom-tooltip{
+    position:absolute; z-index:20;
+    background:rgba(255,252,246,.97); border:1px solid #E2D5BC; border-radius:10px;
+    padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.12);
+    max-width:240px; max-height:260px; overflow-y:auto; display:none;
+  }
 
   /* ---------- 右侧名单 ---------- */
   #list{
@@ -206,8 +239,10 @@
 
 <main>
   <div id="map-box">
-    <div id="map"></div>
-    <div class="legend">
+   <div id="map"></div>
+   <div id="dot-overlay"></div>
+   <div id="custom-tooltip"></div>
+   <div class="legend">
       <span>人数</span>
       <span class="item"><span class="dot" style="width:12px;height:12px;background:#F0A99B"></span>1</span>
       <span class="item"><span class="dot" style="width:15px;height:15px;background:#DE6F5C"></span>2–3</span>
@@ -335,82 +370,79 @@ function markerSize(n){
 }
 
 /* ================= 地图 ================= */
- echarts.registerMap('china', window.CHINA_GEO);
- const chart = echarts.init(document.getElementById('map'), null, { renderer:'svg' });
+echarts.registerMap('china', window.CHINA_GEO);
+/* svg 渲染器：地图用矢量绘制，roam 时整体变换，不会出现 canvas 多层失步 */
+const chart = echarts.init(document.getElementById('map'), null, { renderer:'svg' });
 
- const scatterData = CITIES.map(c => ({
-   name: c.city,
-   value: [c.coords[0], c.coords[1], c.count, c.idx],
-   symbolSize: markerSize(c.count),
-   itemStyle: { color: ramp(c.count) }
- }));
-
-function tooltipHtml(c){
-  let h = `<div style="font-size:14px;font-weight:700;color:#9E2B20;margin-bottom:6px;">${c.city} · ${c.count}人</div>`;
-  c.schools.forEach(s=>{
-    h += `<div style="font-size:13px;margin-top:4px;"><b style="color:#4A3F33;">${s[0]}</b><div style="color:#7A6C5C;margin-top:1px;">${s[1].join('、')}</div></div>`;
-  });
-  // 限制高度：学校多的城市（如北京）提示框过长会挡住地图，内部滚动
-  return `<div style="max-height:220px;overflow-y:auto;">${h}</div>`;
-}
-
+/* 只用 geo 组件画地图，不再用 scatter 系列。
+   红点改为 DOM 覆盖层——每次 georoam 时用 convertToPixel 算出像素坐标，
+   直接写入 DOM 元素的 left/top，从根本上保证红点永远钉在地图上。 */
 chart.setOption({
-  tooltip:{
-    trigger:'item',
-    backgroundColor:'rgba(255,252,246,.97)',
-    borderColor:'#E2D5BC',
-    textStyle:{ color:'#4A3F33' },
-    padding:[10,14],
-    confine:true, // 提示框不超出地图边界（手机端防横向溢出）
-    formatter: p => tooltipHtml(CITIES[p.data.value[3]])
-  },
   geo:{
-    map:'china',
-    roam:true,
-    zoom:1.08,
+    map:'china', roam:true, zoom:1.08,
     itemStyle:{ areaColor:'#F1E8D8', borderColor:'#E0D2B6', borderWidth:1 },
     emphasis:{ itemStyle:{ areaColor:'#EADCC4' }, label:{ show:false } },
-    label:{ show:false }
-  },
- series:[{
-   name:'同学分布',
-   type:'scatter',
-   coordinateSystem:'geo',
-   data: scatterData,
-   symbolSize: 10,
-   animationDurationUpdate: 0,
-   itemStyle:{
-     borderColor:'#FFFFFF',
-     borderWidth:2,
-     shadowBlur:10,
-     shadowColor:'rgba(160,60,40,.4)'
-   },
-    label:{
-      show:true,
-      position:'bottom',
-      distance:6,
-      color:'#6B5A48',
-      fontSize:12,
-      fontWeight:600,
-      formatter: p => `${p.name} ${p.value[2]}`
-    },
-    emphasis:{
-      scale:1.35,
-      itemStyle:{ shadowBlur:16, shadowColor:'rgba(160,60,40,.55)' }
-    }
-  }]
+    label:{ show:false },
+    scaleLimit:{ min:0.8, max:12 }
+  }
 });
 
-/* 点击地图标记 → 名单定位 */
-chart.on('click', p => {
-  const c = CITIES[p.data.value[3]];
-  scrollToCity(c);
+/* ---- 创建 DOM 红点 ---- */
+const overlay = document.getElementById('dot-overlay');
+const tooltipEl = document.getElementById('custom-tooltip');
+
+const dotEls = CITIES.map(c => {
+  const el = document.createElement('div');
+  el.className = 'city-dot';
+  el.dataset.idx = c.idx;
+  const circle = document.createElement('div');
+  circle.className = 'dot-circle';
+  circle.style.width = circle.style.height = markerSize(c.count) + 'px';
+  circle.style.background = ramp(c.count);
+  const label = document.createElement('div');
+  label.className = 'dot-label';
+  label.textContent = c.city + ' ' + c.count;
+  el.appendChild(circle);
+  el.appendChild(label);
+  overlay.appendChild(el);
+
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    showTooltip(c, el);
+    scrollToCity(c);
+  });
+  el.addEventListener('mouseenter', () => {
+    el.classList.add('active');
+    showTooltip(c, el);
+  });
+  el.addEventListener('mouseleave', () => {
+    el.classList.remove('active');
+  });
+  return el;
 });
-chart.on('mouseover', p => {
-  chart.dispatchAction({ type:'highlight', seriesIndex:0, dataIndex: p.dataIndex });
-});
-chart.on('mouseout', p => {
-  chart.dispatchAction({ type:'downplay', seriesIndex:0, dataIndex: p.dataIndex });
+
+function showTooltip(c, anchorEl){
+  let h = '<div style="font-size:14px;font-weight:700;color:#9E2B20;margin-bottom:6px;">' + c.city + ' · ' + c.count + '人</div>';
+  c.schools.forEach(s => {
+    h += '<div style="font-size:13px;margin-top:4px;"><b style="color:#4A3F33;">' + s[0] + '</b><div style="color:#7A6C5C;margin-top:1px;">' + s[1].join('、') + '</div></div>';
+  });
+  tooltipEl.innerHTML = h;
+  tooltipEl.style.display = 'block';
+  /* 以圆点为锚自动定位，不超出地图边界 */
+  const box = document.getElementById('map-box').getBoundingClientRect();
+  const rect = anchorEl.getBoundingClientRect();
+  const ttH = tooltipEl.offsetHeight, ttW = tooltipEl.offsetWidth;
+  let left = rect.left - box.left + rect.width / 2 - ttW / 2;
+  let top = rect.top - box.top - ttH - 10;
+  if(top < 8) top = rect.bottom - box.top + 10; /* 上方放不下就放下方 */
+  left = Math.max(8, Math.min(left, box.width - ttW - 8));
+  top = Math.max(8, Math.min(top, box.height - ttH - 8));
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = top + 'px';
+}
+function hideTooltip(){ tooltipEl.style.display = 'none'; }
+document.getElementById('map-box').addEventListener('click', e => {
+  if(!e.target.closest('.city-dot')) hideTooltip();
 });
 
 function scrollToCity(c){
@@ -422,38 +454,7 @@ function scrollToCity(c){
   el.classList.add('flash');
 }
 
-/* ================= 名单 ================= */
-const listEl = document.getElementById('city-list');
-CITIES.forEach(c => {
-  const sec = document.createElement('section');
-  sec.className = 'city';
-  sec.id = 'city-' + c.idx;
-
-  const head = document.createElement('div');
-  head.className = 'city-head';
-  head.innerHTML = `<span class="city-name">${c.city}</span><span class="city-count">${c.count}人</span>`;
-  head.title = '在地图上定位';
-  head.addEventListener('click', () => {
-    chart.dispatchAction({ type:'showTip', seriesIndex:0, dataIndex: c.idx });
-    chart.dispatchAction({ type:'highlight', seriesIndex:0, dataIndex: c.idx });
-    setTimeout(()=> chart.dispatchAction({ type:'downplay', seriesIndex:0, dataIndex: c.idx }), 1600);
-  });
-
-  const schools = document.createElement('div');
-  schools.className = 'schools';
-  c.schools.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'school';
-    row.innerHTML = `<span class="school-name">${s[0]}</span><span class="students">${s[1].join('、')}</span>`;
-    schools.appendChild(row);
-  });
-
-  sec.appendChild(head);
-  sec.appendChild(schools);
-  listEl.appendChild(sec);
-});
-
-/* ================= 标注自适应：地图范围广时只显示点位 ================= */
+/* ---- 红点定位 + 缩放联动 ---- */
 function getGeoZoom(){
   try{
     const g = chart.getModel().getComponent('geo').coordinateSystem;
@@ -461,90 +462,92 @@ function getGeoZoom(){
       const z = g.getZoom();
       if(typeof z === 'number' && isFinite(z)) return z;
     }
-  }catch(e){ /* 忽略 */ }
-  return chart.getOption().geo?.[0]?.zoom || 1;
+  }catch(e){ }
+  return (chart.getOption().geo && chart.getOption().geo[0] && chart.getOption().geo[0].zoom) || 1;
 }
 
-let labelOn = false; // 初始缩放 1.08 < 1.25，标注默认隐藏；保持 false 使加载时的首次 updateMapLabels 直接早退，
-                     // 不在进场动画进行中触发 setOption（实测会打断散点进场动画，部分圆点冻结在 scale≈0 而消失）
-function setLabels(show){
-  if(show === labelOn) return;
-  labelOn = show;
-  chart.setOption({ series:[{ label:{ show } }] });
-  document.getElementById('map-tip')?.classList.toggle('hide', show);
-}
-
-/* 估算标注文字宽度（"城市名 人数"） */
-function estLabelW(c){ return c.city.length * 12 + 18; }
-
-/* 像素碰撞检测：可见标注互相重叠 → 隐藏文字，只留点位 */
-function updateMapLabels(){
+function updateDots(){
+  const zoom = getGeoZoom();
   const w = chart.getWidth(), h = chart.getHeight();
-  if(getGeoZoom() < 1.25){ setLabels(false); return; }
-  const items = [];
-  CITIES.forEach(c => {
+  const showLabels = zoom >= 1.6;
+  const scaleFactor = Math.min(zoom / 1.08, 2.2); /* 放大时红点适度变大，上限 2.2 倍 */
+
+  CITIES.forEach((c, i) => {
     const p = chart.convertToPixel({ geoIndex:0 }, c.coords);
-    if(p && isFinite(p[0]) && p[0] > -80 && p[0] < w + 80 && p[1] > -40 && p[1] < h + 40){
-      items.push({ x:p[0], y:p[1], w: estLabelW(c) });
+    const el = dotEls[i];
+    if(p && isFinite(p[0]) && isFinite(p[1])){
+      el.style.left = p[0] + 'px';
+      el.style.top = p[1] + 'px';
+      const visible = p[0] > -60 && p[0] < w + 60 && p[1] > -60 && p[1] < h + 60;
+      el.style.display = visible ? '' : 'none';
+      const sz = Math.round(markerSize(c.count) * scaleFactor);
+      const circle = el.querySelector('.dot-circle');
+      circle.style.width = circle.style.height = sz + 'px';
+      el.classList.toggle('show-label', showLabels && visible);
+    } else {
+      el.style.display = 'none';
     }
   });
-  items.sort((a,b)=> a.y - b.y);
-  let collide = false;
-  for(let i=1; i<items.length && !collide; i++){
-    const a = items[i-1], b = items[i];
-    if(b.y - a.y >= 15) continue;                                // 纵向不重叠
-    if(Math.abs(b.x - a.x) < (a.w + b.w) / 2 - 8) collide = true; // 横向重叠
-  }
-  setLabels(!collide);
+  const tip = document.getElementById('map-tip');
+  if(tip) tip.classList.toggle('hide', showLabels);
 }
 
-/* 标注更新绝不在拖动/捏合进行中执行：手势中 setOption 重绘会让地图层与模型失步，
-   红点与地图整体错位（已复现：13/19 城市投影点落到画布空白处，且不随拖拽/缩放自愈，
-   只有全量重绘如 chart.resize() 能恢复）。
-   因此：只要有手指按着（多指计数）或鼠标按住，标注更新一律推迟到手势结束。 */
-let labelTimer = null;
-let activeTouches = 0;   // 当前按住屏幕的触点数量（双指捏合时为 2）
-let mouseDown = false;   // 鼠标是否按住（桌面拖拽）
-function gestureActive(){ return activeTouches > 0 || mouseDown; }
+/* 最关键的一行：地图每一次 roam（拖动/缩放）都重新计算红点像素坐标 */
+chart.on('georoam', updateDots);
 
-function scheduleLabels(){
-  if(labelTimer) clearTimeout(labelTimer);
-  labelTimer = setTimeout(()=>{
-    labelTimer = null;
-    if(gestureActive()){ scheduleLabels(); return; } // 手势进行中：继续等待
-    updateMapLabels();
-  }, 200);
-}
-function flushLabels(){
-  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
-  if(gestureActive()) return; // 仍有触点/鼠标按住：等所有触点都抬起再更新
-  updateMapLabels();
-}
+/* 手机端拖拽/缩放时让红点不拦截手势（overlay.dragging → pointer-events:none） */
+const mapBox = document.getElementById('map-box');
+mapBox.addEventListener('touchstart', () => overlay.classList.add('dragging'), { passive:true });
+mapBox.addEventListener('touchend', () => overlay.classList.remove('dragging'));
+mapBox.addEventListener('touchcancel', () => overlay.classList.remove('dragging'));
 
-chart.on('georoam', scheduleLabels);
-const mapEl = document.getElementById('map');
-mapEl.addEventListener('touchstart', e => {
-  activeTouches += e.changedTouches.length;
-  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
-});
-mapEl.addEventListener('touchend', e => {
-  activeTouches = Math.max(0, activeTouches - e.changedTouches.length);
-  flushLabels();
-});
-mapEl.addEventListener('touchcancel', () => { activeTouches = 0; flushLabels(); });
-mapEl.addEventListener('mousedown', () => {
-  mouseDown = true;
-  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
-});
-window.addEventListener('mouseup', () => { mouseDown = false; flushLabels(); });
-window.addEventListener('resize', ()=>{
-  chart.dispatchAction({ type:'hideTip' }); // 先收起提示框，避免旧尺寸下错位残留造成横向溢出
+window.addEventListener('resize', () => {
   chart.resize();
-  if(!gestureActive()) scheduleLabels(); // 手势进行中由手势结束时的 flushLabels 兜底
-  // 标注显隐的 setOption 重绘可能把提示框重新唤起，等重绘完成后再收起一次
-  setTimeout(()=> chart.dispatchAction({ type:'hideTip' }), 150);
+  hideTooltip();
+  updateDots();
 });
-updateMapLabels(); // 初始：概览范围只显示点位
+
+/* 名单点击 → 地图飞到对应城市 */
+function flyToCity(c){
+  const zoom = Math.max(getGeoZoom(), 2.5);
+  chart.setOption({ geo:{ center: c.coords, zoom } }, { lazyUpdate:true });
+  requestAnimationFrame(() => {
+   updateDots();
+   showTooltip(c, dotEls[c.idx]);
+ });
+setTimeout(updateDots, 300);
+setTimeout(updateDots, 800);
+setTimeout(updateDots, 1500);
+}
+
+/* ================= 名单 ================= */
+const listEl = document.getElementById('city-list');
+CITIES.forEach(c => {
+  const sec = document.createElement('section');
+  sec.className = 'city';
+  sec.id = 'city-' + c.idx;
+  const head = document.createElement('div');
+  head.className = 'city-head';
+  head.innerHTML = '<span class="city-name">' + c.city + '</span><span class="city-count">' + c.count + '人</span>';
+  head.title = '在地图上定位';
+  head.addEventListener('click', () => flyToCity(c));
+  const schools = document.createElement('div');
+  schools.className = 'schools';
+  c.schools.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'school';
+    row.innerHTML = '<span class="school-name">' + s[0] + '</span><span class="students">' + s[1].join('、') + '</span>';
+    schools.appendChild(row);
+  });
+  sec.appendChild(head);
+  sec.appendChild(schools);
+  listEl.appendChild(sec);
+});
+
+/* setOption 改 center/zoom 不触发 georoam，但会触发 finished；
+   注册一次即可覆盖后续所有动画（包括用户拖拽后的收尾） */
+chart.on('finished', updateDots);
+updateDots();
 </script>
 </body>
 </html>
