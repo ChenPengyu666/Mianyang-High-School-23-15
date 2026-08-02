@@ -402,6 +402,8 @@ const overlay = document.getElementById('dot-overlay');
 overlay.classList.add('zooming'); // 初始加载阶段禁用过渡
 const tooltipEl = document.getElementById('custom-tooltip');
 	let tooltipSticky = false;
+/* 触屏设备（手机/平板）点击红点时只显示信息，不自动滚动名单；电脑端保留原行为 */
+const isTouchDevice = window.matchMedia('(hover: none)').matches;
 
 const dotEls = CITIES.map(c => {
   const el = document.createElement('div');
@@ -422,7 +424,7 @@ const dotEls = CITIES.map(c => {
     e.stopPropagation();
 	    tooltipSticky = true;
     showTooltip(c, el);
-    scrollToCity(c);
+    if(!isTouchDevice) scrollToCity(c);
   });
   el.addEventListener('mouseenter', () => {
     el.classList.add('active');
