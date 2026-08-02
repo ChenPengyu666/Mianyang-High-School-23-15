@@ -374,7 +374,10 @@ chart.setOption({
     name:'同学分布',
     type:'scatter',
     coordinateSystem:'geo',
-    zlevel:2,
+    /* 不设 zlevel（默认 0）：散点与地图同画布。
+       之前用 zlevel:2 把散点放到独立画布，手势中 setOption 重绘散点层时
+       地图层画布会残留手势进行中的旧画面 → 红点与地图整体错位且不自愈。
+       同一画布上每次重绘原子地重画整帧，从结构上消除"图层冻结"类错位。 */
     data: scatterData,
     symbolSize: v => markerSize(v[2]),
     itemStyle:{
@@ -464,7 +467,8 @@ function getGeoZoom(){
   return chart.getOption().geo?.[0]?.zoom || 1;
 }
 
-let labelOn = true;
+let labelOn = false; // 初始缩放 1.08 < 1.25，标注默认隐藏；保持 false 使加载时的首次 updateMapLabels 直接早退，
+                     // 不在进场动画进行中触发 setOption（实测会打断散点进场动画，部分圆点冻结在 scale≈0 而消失）
 function setLabels(show){
   if(show === labelOn) return;
   labelOn = show;
@@ -496,29 +500,49 @@ function updateMapLabels(){
   setLabels(!collide);
 }
 
-/* 标注更新绝不在拖动/捏合过程中执行：roam 途中 setOption 重绘会与手势状态竞争，
-   导致散点层与地图层不同步（红点脱离地图被拖动）、缩放跳动。
-   改为手势结束（或停顿 200ms）后再计算标注显隐。 */
+/* 标注更新绝不在拖动/捏合进行中执行：手势中 setOption 重绘会让地图层与模型失步，
+   红点与地图整体错位（已复现：13/19 城市投影点落到画布空白处，且不随拖拽/缩放自愈，
+   只有全量重绘如 chart.resize() 能恢复）。
+   因此：只要有手指按着（多指计数）或鼠标按住，标注更新一律推迟到手势结束。 */
 let labelTimer = null;
+let activeTouches = 0;   // 当前按住屏幕的触点数量（双指捏合时为 2）
+let mouseDown = false;   // 鼠标是否按住（桌面拖拽）
+function gestureActive(){ return activeTouches > 0 || mouseDown; }
+
 function scheduleLabels(){
   if(labelTimer) clearTimeout(labelTimer);
-  labelTimer = setTimeout(()=>{ labelTimer = null; updateMapLabels(); }, 200);
+  labelTimer = setTimeout(()=>{
+    labelTimer = null;
+    if(gestureActive()){ scheduleLabels(); return; } // 手势进行中：继续等待
+    updateMapLabels();
+  }, 200);
 }
 function flushLabels(){
   if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
+  if(gestureActive()) return; // 仍有触点/鼠标按住：等所有触点都抬起再更新
   updateMapLabels();
 }
 
 chart.on('georoam', scheduleLabels);
 const mapEl = document.getElementById('map');
-['touchstart','mousedown'].forEach(ev => mapEl.addEventListener(ev, ()=>{
+mapEl.addEventListener('touchstart', e => {
+  activeTouches += e.changedTouches.length;
   if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
-}));
-['touchend','touchcancel','mouseup'].forEach(ev => mapEl.addEventListener(ev, flushLabels));
+});
+mapEl.addEventListener('touchend', e => {
+  activeTouches = Math.max(0, activeTouches - e.changedTouches.length);
+  flushLabels();
+});
+mapEl.addEventListener('touchcancel', () => { activeTouches = 0; flushLabels(); });
+mapEl.addEventListener('mousedown', () => {
+  mouseDown = true;
+  if(labelTimer){ clearTimeout(labelTimer); labelTimer = null; }
+});
+window.addEventListener('mouseup', () => { mouseDown = false; flushLabels(); });
 window.addEventListener('resize', ()=>{
   chart.dispatchAction({ type:'hideTip' }); // 先收起提示框，避免旧尺寸下错位残留造成横向溢出
   chart.resize();
-  scheduleLabels();
+  if(!gestureActive()) scheduleLabels(); // 手势进行中由手势结束时的 flushLabels 兜底
   // 标注显隐的 setOption 重绘可能把提示框重新唤起，等重绘完成后再收起一次
   setTimeout(()=> chart.dispatchAction({ type:'hideTip' }), 150);
 });

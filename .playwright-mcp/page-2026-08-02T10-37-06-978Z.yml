@@ -1,0 +1,230 @@
+- generic [active] [ref=f16e1]:
+  - banner [ref=f16e2]:
+    - img "绵阳中学校徽" [ref=f16e3]
+    - generic [ref=f16e4]:
+      - heading "2023级15班班级蹭饭地图" [level=1] [ref=f16e5]
+      - generic [ref=f16e6]: 毕业去向 · 到哪儿都能蹭到饭 🍚
+    - img "15班班徽" [ref=f16e7]
+  - generic [ref=f16e8]:
+    - generic [ref=f16e9]: 班主任：文选
+    - generic [ref=f16e10]: 语文：李永贵
+    - generic [ref=f16e11]: 数学：何虎
+    - generic [ref=f16e12]: 英语：李佳翼
+    - generic [ref=f16e13]: 物理：邓彬
+    - generic [ref=f16e14]: 化学：文选
+    - generic [ref=f16e15]: 生物：林玲
+  - generic [ref=f16e16]:
+    - generic [ref=f16e17]: 54名同学
+    - generic [ref=f16e18]: 38所高校
+    - generic [ref=f16e19]: 19座城市
+  - main [ref=f16e20]:
+    - generic [ref=f16e21]:
+      - generic [ref=f16e25]:
+        - generic [ref=f16e26]: 人数
+        - generic [ref=f16e27]: "1"
+        - generic [ref=f16e29]: 2–3
+        - generic [ref=f16e31]: 4–6
+        - generic [ref=f16e33]: 7+
+      - generic: 🔍 拖动平移 · 滚动/双指缩放地图，放大后显示城市标注
+    - complementary [ref=f16e35]:
+      - heading "去向名单" [level=2] [ref=f16e36]
+      - generic [ref=f16e37]: 点击城市可在地图上定位 · 点击地图标记可跳回名单
+      - generic [ref=f16e38]:
+        - generic [ref=f16e39]:
+          - generic "在地图上定位" [ref=f16e40] [cursor=pointer]:
+            - generic [ref=f16e41]: 成都
+            - generic [ref=f16e42]: 12人
+          - generic [ref=f16e43]:
+            - generic [ref=f16e44]:
+              - generic [ref=f16e45]: 电子科技大学
+              - generic [ref=f16e46]: 龚飞陶、胡馨月、王羿丹、赵允坚
+            - generic [ref=f16e47]:
+              - generic [ref=f16e48]: 西南财经大学
+              - generic [ref=f16e49]: 王浩宇、魏佳玲
+            - generic [ref=f16e50]:
+              - generic [ref=f16e51]: 四川大学
+              - generic [ref=f16e52]: 罗钰婷、夏竹雅
+            - generic [ref=f16e53]:
+              - generic [ref=f16e54]: 西南交通大学
+              - generic [ref=f16e55]: 陈以珊、胥逸凡
+            - generic [ref=f16e56]:
+              - generic [ref=f16e57]: 西南石油大学
+              - generic [ref=f16e58]: 李嘉帆、何骏铜
+        - generic [ref=f16e59]:
+          - generic "在地图上定位" [ref=f16e60] [cursor=pointer]:
+            - generic [ref=f16e61]: 北京
+            - generic [ref=f16e62]: 9人
+          - generic [ref=f16e63]:
+            - generic [ref=f16e64]:
+              - generic [ref=f16e65]: 清华大学
+              - generic [ref=f16e66]: 万柯杏
+            - generic [ref=f16e67]:
+              - generic [ref=f16e68]: 北京航空航天大学
+              - generic [ref=f16e69]: 陈牧逸
+            - generic [ref=f16e70]:
+              - generic [ref=f16e71]: 中国农业大学
+              - generic [ref=f16e72]: 余承艾狄、吴振东
+            - generic [ref=f16e73]:
+              - generic [ref=f16e74]: 中央民族大学
+              - generic [ref=f16e75]: 陈鹏宇
+            - generic [ref=f16e76]:
+              - generic [ref=f16e77]: 北京师范大学
+              - generic [ref=f16e78]: 宋淇鹏
+            - generic [ref=f16e79]:
+              - generic [ref=f16e80]: 华北电力大学
+              - generic [ref=f16e81]: 丁钲轩
+            - generic [ref=f16e82]:
+              - generic [ref=f16e83]: 中央财经大学
+              - generic [ref=f16e84]: 白雨涵
+            - generic [ref=f16e85]:
+              - generic [ref=f16e86]: 中国地质大学
+              - generic [ref=f16e87]: 舒阳洋
+        - generic [ref=f16e88]:
+          - generic "在地图上定位" [ref=f16e89] [cursor=pointer]:
+            - generic [ref=f16e90]: 南京
+            - generic [ref=f16e91]: 5人
+          - generic [ref=f16e92]:
+            - generic [ref=f16e93]:
+              - generic [ref=f16e94]: 南京大学
+              - generic [ref=f16e95]: 朱鑫燊
+            - generic [ref=f16e96]:
+              - generic [ref=f16e97]: 南京航空航天大学
+              - generic [ref=f16e98]: 鲁哲宇、叶晨希
+            - generic [ref=f16e99]:
+              - generic [ref=f16e100]: 南京理工大学
+              - generic [ref=f16e101]: 林曾诚
+            - generic [ref=f16e102]:
+              - generic [ref=f16e103]: 河海大学
+              - generic [ref=f16e104]: 彭琪茗
+        - generic [ref=f16e105]:
+          - generic "在地图上定位" [ref=f16e106] [cursor=pointer]:
+            - generic [ref=f16e107]: 天津
+            - generic [ref=f16e108]: 4人
+          - generic [ref=f16e109]:
+            - generic [ref=f16e110]:
+              - generic [ref=f16e111]: 南开大学
+              - generic [ref=f16e112]: 李俊宁、袁奥翔
+            - generic [ref=f16e113]:
+              - generic [ref=f16e114]: 天津大学
+              - generic [ref=f16e115]: 蒋思捷、刘思远
+        - generic [ref=f16e116]:
+          - generic "在地图上定位" [ref=f16e117] [cursor=pointer]:
+            - generic [ref=f16e118]: 重庆
+            - generic [ref=f16e119]: 3人
+          - generic [ref=f16e120]:
+            - generic [ref=f16e121]:
+              - generic [ref=f16e122]: 重庆大学
+              - generic [ref=f16e123]: 刘谨瑜、何永康
+            - generic [ref=f16e124]:
+              - generic [ref=f16e125]: 联勤保障部队工程大学
+              - generic [ref=f16e126]: 李泽盟
+        - generic [ref=f16e127]:
+          - generic "在地图上定位" [ref=f16e128] [cursor=pointer]:
+            - generic [ref=f16e129]: 上海
+            - generic [ref=f16e130]: 3人
+          - generic [ref=f16e131]:
+            - generic [ref=f16e132]:
+              - generic [ref=f16e133]: 上海财经大学
+              - generic [ref=f16e134]: 王月
+            - generic [ref=f16e135]:
+              - generic [ref=f16e136]: 华东理工大学
+              - generic [ref=f16e137]: 王博为
+            - generic [ref=f16e138]:
+              - generic [ref=f16e139]: 华东师范大学
+              - generic [ref=f16e140]: 刘子涵
+        - generic [ref=f16e141]:
+          - generic "在地图上定位" [ref=f16e142] [cursor=pointer]:
+            - generic [ref=f16e143]: 雅安
+            - generic [ref=f16e144]: 3人
+          - generic [ref=f16e146]:
+            - generic [ref=f16e147]: 四川农业大学
+            - generic [ref=f16e148]: 黄逸、毛毓烨、黄子轩
+        - generic [ref=f16e149]:
+          - generic "在地图上定位" [ref=f16e150] [cursor=pointer]:
+            - generic [ref=f16e151]: 哈尔滨
+            - generic [ref=f16e152]: 2人
+          - generic [ref=f16e154]:
+            - generic [ref=f16e155]: 哈尔滨工业大学
+            - generic [ref=f16e156]: 袁一备、刘佳鑫
+        - generic [ref=f16e157]:
+          - generic "在地图上定位" [ref=f16e158] [cursor=pointer]:
+            - generic [ref=f16e159]: 秦皇岛
+            - generic [ref=f16e160]: 2人
+          - generic [ref=f16e161]:
+            - generic [ref=f16e162]:
+              - generic [ref=f16e163]: 东北大学（秦皇岛）
+              - generic [ref=f16e164]: 雷晟杰
+            - generic [ref=f16e165]:
+              - generic [ref=f16e166]: 东北大学（秦皇岛分校）
+              - generic [ref=f16e167]: 罗泽同
+        - generic [ref=f16e168]:
+          - generic "在地图上定位" [ref=f16e169] [cursor=pointer]:
+            - generic [ref=f16e170]: 厦门
+            - generic [ref=f16e171]: 2人
+          - generic [ref=f16e173]:
+            - generic [ref=f16e174]: 厦门大学
+            - generic [ref=f16e175]: 周幸芮仟、朱姊殷
+        - generic [ref=f16e176]:
+          - generic "在地图上定位" [ref=f16e177] [cursor=pointer]:
+            - generic [ref=f16e178]: 大连
+            - generic [ref=f16e179]: 1人
+          - generic [ref=f16e181]:
+            - generic [ref=f16e182]: 大连海事大学
+            - generic [ref=f16e183]: 赵晨皓
+        - generic [ref=f16e184]:
+          - generic "在地图上定位" [ref=f16e185] [cursor=pointer]:
+            - generic [ref=f16e186]: 杭州
+            - generic [ref=f16e187]: 1人
+          - generic [ref=f16e189]:
+            - generic [ref=f16e190]: 浙江大学
+            - generic [ref=f16e191]: 何嘉鑫
+        - generic [ref=f16e192]:
+          - generic "在地图上定位" [ref=f16e193] [cursor=pointer]:
+            - generic [ref=f16e194]: 吉林市
+            - generic [ref=f16e195]: 1人
+          - generic [ref=f16e197]:
+            - generic [ref=f16e198]: 东北电力大学
+            - generic [ref=f16e199]: 胡栗豪
+        - generic [ref=f16e200]:
+          - generic "在地图上定位" [ref=f16e201] [cursor=pointer]:
+            - generic [ref=f16e202]: 兰州
+            - generic [ref=f16e203]: 1人
+          - generic [ref=f16e205]:
+            - generic [ref=f16e206]: 兰州大学
+            - generic [ref=f16e207]: 陈信
+        - generic [ref=f16e208]:
+          - generic "在地图上定位" [ref=f16e209] [cursor=pointer]:
+            - generic [ref=f16e210]: 深圳
+            - generic [ref=f16e211]: 1人
+          - generic [ref=f16e213]:
+            - generic [ref=f16e214]: 深圳理工大学
+            - generic [ref=f16e215]: 邓可
+        - generic [ref=f16e216]:
+          - generic "在地图上定位" [ref=f16e217] [cursor=pointer]:
+            - generic [ref=f16e218]: 太原
+            - generic [ref=f16e219]: 1人
+          - generic [ref=f16e221]:
+            - generic [ref=f16e222]: 太原理工大学
+            - generic [ref=f16e223]: 姚俊希
+        - generic [ref=f16e224]:
+          - generic "在地图上定位" [ref=f16e225] [cursor=pointer]:
+            - generic [ref=f16e226]: 武汉
+            - generic [ref=f16e227]: 1人
+          - generic [ref=f16e229]:
+            - generic [ref=f16e230]: 华中师范大学
+            - generic [ref=f16e231]: 何佳金
+        - generic [ref=f16e232]:
+          - generic "在地图上定位" [ref=f16e233] [cursor=pointer]:
+            - generic [ref=f16e234]: 长春
+            - generic [ref=f16e235]: 1人
+          - generic [ref=f16e237]:
+            - generic [ref=f16e238]: 吉林大学
+            - generic [ref=f16e239]: 王润峰
+        - generic [ref=f16e240]:
+          - generic "在地图上定位" [ref=f16e241] [cursor=pointer]:
+            - generic [ref=f16e242]: 长沙
+            - generic [ref=f16e243]: 1人
+          - generic [ref=f16e245]:
+            - generic [ref=f16e246]: 湖南大学
+            - generic [ref=f16e247]: 梁梓铃
+  - contentinfo [ref=f16e248]: 四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.1
