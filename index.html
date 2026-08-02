@@ -437,20 +437,26 @@ const dotEls = CITIES.map(c => {
   return { el:el, circle:circle };
 });
 
-function showTooltip(c, anchorEl){
+function showTooltip(c, anchorEl, px, py){
   let h = '<div style="font-size:14px;font-weight:700;color:#9E2B20;margin-bottom:6px;">' + c.city + ' · ' + c.count + '人</div>';
   c.schools.forEach(s => {
     h += '<div style="font-size:13px;margin-top:4px;"><b style="color:#4A3F33;">' + s[0] + '</b><div style="color:#7A6C5C;margin-top:1px;">' + s[1].join('、') + '</div></div>';
   });
   tooltipEl.innerHTML = h;
   tooltipEl.style.display = 'block';
-  /* 以圆点为锚自动定位，不超出地图边界 */
+  /* 以圆点或点击坐标为锚自动定位，不超出地图边界 */
   const box = document.getElementById('map-box').getBoundingClientRect();
-  const rect = anchorEl.getBoundingClientRect();
   const ttH = tooltipEl.offsetHeight, ttW = tooltipEl.offsetWidth;
-  let left = rect.left - box.left + rect.width / 2 - ttW / 2;
-  let top = rect.top - box.top - ttH - 10;
-  if(top < 8) top = rect.bottom - box.top + 10; /* 上方放不下就放下方 */
+  let left, top;
+  if(px != null && py != null){
+    left = px - ttW / 2;
+    top = py - ttH - 10;
+  } else {
+    const rect = anchorEl.getBoundingClientRect();
+    left = rect.left - box.left + rect.width / 2 - ttW / 2;
+    top = rect.top - box.top - ttH - 10;
+  }
+  if(top < 8) top = (px != null && py != null ? py : anchorEl.getBoundingClientRect().bottom - box.top) + 10; /* 上方放不下就放下方 */
   left = Math.max(8, Math.min(left, box.width - ttW - 8));
   top = Math.max(8, Math.min(top, box.height - ttH - 8));
   tooltipEl.style.left = left + 'px';
@@ -459,6 +465,25 @@ function showTooltip(c, anchorEl){
 function hideTooltip(){ tooltipEl.style.display = 'none'; }
 document.getElementById('map-box').addEventListener('click', e => {
 	  if(!e.target.closest('.city-dot') && !tooltipSticky) hideTooltip();
+});
+
+/* 手机端：省份地图块只有一个城市有同学时，点地图块直接弹出该城市信息 */
+function normProvince(p){
+  return String(p || '').replace(/(省|市|壮族自治区|回族自治区|维吾尔自治区|自治区|特别行政区)$/g, '');
+}
+chart.on('click', params => {
+  if(!isTouchDevice) return;
+  if(!params || params.componentType !== 'geo') return;
+  const name = (params.name || (params.region && params.region.name) || '').trim();
+  if(!name) return;
+  const prov = normProvince(name);
+  const hits = CITIES.filter(c => normProvince(c.province) === prov);
+  if(hits.length === 1){
+    const c = hits[0];
+    tooltipSticky = true;
+    const ev = params.event || {};
+    showTooltip(c, dotEls[c.idx].el, ev.offsetX, ev.offsetY);
+  }
 });
 
 function scrollToCity(c){
