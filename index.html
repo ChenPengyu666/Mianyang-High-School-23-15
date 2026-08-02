@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15班班级蹭饭地图</title>
+<style>
+  :root{
+    --paper:#FBF7F0;
+    --ink:#4A3F33;
+    --ink-soft:#7A6C5C;
+    --accent:#9E2B20;
+    --accent-2:#C94532;
+    --line:#EADFCC;
+    --card:#FFFFFF;
+    --chip:#F3ECDF;
+    --banner-1:#B03A2E;
+    --banner-2:#8F2318;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    display:flex; flex-direction:column;
+  }
+
+  /* ---------- 顶部：徽章 + 标题 ---------- */
+  header{
+    background:linear-gradient(180deg,#FFFFFF 0%,#FDFAF3 100%);
+    border-bottom:2px solid var(--line);
+    padding:18px 28px 14px;
+    display:flex; align-items:center; justify-content:center; gap:28px;
+    flex-wrap:wrap;
+  }
+  .badge{ width:92px; height:92px; object-fit:contain; border-radius:14px;
+    box-shadow:0 3px 12px rgba(158,43,32,.18); background:#fff; padding:4px; }
+  .title-wrap{ text-align:center; }
+  .title-wrap h1{
+    font-family:"STKaiti","KaiTi","华文楷体","Songti SC",serif;
+    font-size:44px; letter-spacing:10px; color:var(--accent);
+    text-shadow:0 2px 0 #F3D9D0;
+    white-space:nowrap;
+  }
+  .subtitle{ margin-top:6px; font-size:15px; color:var(--ink-soft); letter-spacing:4px; }
+
+  /* ---------- 教师信息条 ---------- */
+  .teachers{
+    background:linear-gradient(90deg,var(--banner-1),var(--banner-2));
+    color:#FFF8F2;
+    text-align:center;
+    padding:10px 16px;
+    font-size:15px;
+    letter-spacing:2px;
+    border-bottom:2px solid var(--line);
+    display:flex; flex-wrap:wrap; justify-content:center; gap:6px 26px;
+  }
+  .teachers b{ font-weight:600; color:#FFE3C4; }
+
+  /* ---------- 统计条 ---------- */
+  .stats{
+    display:flex; justify-content:center; gap:44px;
+    padding:12px 16px 0;
+    font-size:14px; color:var(--ink-soft);
+  }
+  .stats .num{ font-family:Georgia,serif; font-size:24px; color:var(--accent); font-weight:700; margin-right:5px; }
+
+  /* ---------- 主体：地图 + 名单 ---------- */
+  main{
+    flex:1; display:flex; gap:18px;
+    padding:14px 24px 20px;
+    min-height:0;
+  }
+  #map-box{
+    flex:1; min-width:0; position:relative;
+    background:var(--card);
+    border:2px solid var(--line); border-radius:16px;
+    box-shadow:0 4px 18px rgba(158,43,32,.08);
+  }
+  #map{ width:100%; height:100%; min-height:520px; border-radius:16px; }
+
+  /* 地图图例 */
+  .legend{
+    position:absolute; left:14px; bottom:14px; z-index:10;
+    background:rgba(255,255,255,.94); border:1px solid var(--line);
+    border-radius:10px; padding:8px 12px;
+    font-size:12px; color:var(--ink-soft);
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+  }
+  .legend .item{ display:flex; align-items:center; gap:5px; }
+  .legend .dot{ border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #D8CBB2; }
+
+  /* ---------- 右侧名单 ---------- */
+  #list{
+    width:400px; flex-shrink:0;
+    overflow-y:auto;
+    background:var(--card);
+    border:2px solid var(--line); border-radius:16px;
+    padding:14px 16px 20px;
+    box-shadow:0 4px 18px rgba(158,43,32,.08);
+  }
+  #list::-webkit-scrollbar{ width:8px; }
+  #list::-webkit-scrollbar-thumb{ background:#E2D5BC; border-radius:4px; }
+  #list h2{ font-size:16px; letter-spacing:2px; color:var(--accent); margin-bottom:2px; }
+  #list .hint{ font-size:12px; color:var(--ink-soft); margin-bottom:12px; }
+
+  .city{ margin-bottom:14px; scroll-margin-top:10px; }
+  .city.flash{ animation:flash 1.4s ease; border-radius:12px; }
+  @keyframes flash{
+    0%{ background:#F9E3DC; } 40%{ background:#F6D3C8; } 100%{ background:transparent; }
+  }
+  .city-head{
+    display:flex; align-items:center; gap:10px;
+    cursor:pointer; user-select:none;
+    padding:6px 10px; margin-bottom:6px;
+    background:linear-gradient(90deg,#F7EAE3,#FBF3EC);
+    border-left:4px solid var(--accent-2);
+    border-radius:8px;
+    transition:transform .12s ease;
+  }
+  .city-head:hover{ transform:translateX(3px); }
+  .city-name{ font-size:16px; font-weight:700; color:var(--accent); letter-spacing:2px; }
+  .city-count{ font-size:12px; color:#fff; background:var(--accent-2); border-radius:999px; padding:1px 9px; }
+  .schools{ padding-left:10px; }
+  .school{ display:flex; align-items:baseline; gap:8px; padding:4px 0; }
+  .school-name{ font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; }
+  .students{ font-size:13px; color:var(--ink-soft); }
+
+  footer{ text-align:center; font-size:12px; color:#B9AC96; padding:0 0 12px; letter-spacing:2px; }
+
+  @media (max-width:960px){
+    main{ flex-direction:column; }
+    #map{ min-height:420px; }
+    #list{ width:100%; max-height:420px; }
+    .title-wrap h1{ font-size:30px; letter-spacing:6px; }
+    .badge{ width:64px; height:64px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="badge" src="绵阳中学校徽.jpg" alt="绵阳中学校徽">
+  <div class="title-wrap">
+    <h1>2023级15班班级蹭饭地图</h1>
+    <div class="subtitle">毕业去向 · 到哪儿都能蹭到饭 🍚</div>
+  </div>
+  <img class="badge" src="15班班徽.png" alt="15班班徽">
+</header>
+
+<div class="teachers">
+  <span>班主任：<b>文选</b></span>
+  <span>语文：<b>李永贵</b></span>
+  <span>数学：<b>何虎</b></span>
+  <span>英语：<b>李佳翼</b></span>
+  <span>物理：<b>邓彬</b></span>
+  <span>化学：<b>文选</b></span>
+  <span>生物：<b>林玲</b></span>
+</div>
+
+<div class="stats">
+  <span><span class="num" id="st-people">0</span>名同学</span>
+  <span><span class="num" id="st-school">0</span>所高校</span>
+  <span><span class="num" id="st-city">0</span>座城市</span>
+</div>
+
+<main>
+  <div id="map-box">
+    <div id="map"></div>
+    <div class="legend">
+      <span>人数</span>
+      <span class="item"><span class="dot" style="width:12px;height:12px;background:#F0A99B"></span>1</span>
+      <span class="item"><span class="dot" style="width:15px;height:15px;background:#DE6F5C"></span>2–3</span>
+      <span class="item"><span class="dot" style="width:19px;height:19px;background:#C94532"></span>4–6</span>
+      <span class="item"><span class="dot" style="width:24px;height:24px;background:#A83020"></span>7+</span>
+    </div>
+  </div>
+
+  <aside id="list">
+    <h2>去向名单</h2>
+    <div class="hint">点击城市可在地图上定位 · 点击地图标记可跳回名单</div>
+    <div id="city-list"></div>
+  </aside>
+</main>
+
+<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.0</footer>
+
+<script src="assets/echarts.min.js"></script>
+<script src="assets/china-map.js"></script>
+<script>
+/* ================= 数据 ================= */
+const CITIES = [
+  { city:'北京', coords:[116.41,39.90], schools:[
+    ['清华大学',['万柯杏']],
+    ['北京航空航天大学',['陈牧逸']],
+    ['中国农业大学',['余承艾狄','吴振东']],
+    ['中央民族大学',['陈鹏宇']],
+    ['北京师范大学',['宋淇鹏']],
+    ['华北电力大学',['丁钲轩']],
+    ['中央财经大学',['白雨涵']],
+    ['中国地质大学',['舒阳洋']],
+  ]},
+  { city:'天津', coords:[117.19,39.13], schools:[
+    ['南开大学',['李俊宁','袁奥翔']],
+    ['天津大学',['蒋思捷','刘思远']],
+  ]},
+  { city:'上海', coords:[121.47,31.23], schools:[
+    ['上海财经大学',['王月']],
+    ['华东理工大学',['王博为']],
+    ['华东师范大学',['刘子涵']],
+  ]},
+  { city:'重庆', coords:[106.55,29.56], schools:[
+    ['重庆大学',['刘谨瑜','何永康']],
+    ['联勤保障部队工程大学',['李泽盟']],
+  ]},
+  { city:'成都', coords:[104.07,30.67], schools:[
+    ['电子科技大学',['龚飞陶','胡馨月','王羿丹','赵允坚']],
+    ['西南财经大学',['王浩宇','魏佳玲']],
+    ['四川大学',['罗钰婷','夏竹雅']],
+    ['西南交通大学',['陈以珊','胥逸凡']],
+    ['西南石油大学',['李嘉帆','何骏铜']],
+  ]},
+  { city:'雅安', coords:[103.04,30.01], schools:[
+    ['四川农业大学',['黄逸','毛毓烨','黄子轩']],
+  ]},
+  { city:'南京', coords:[118.80,32.06], schools:[
+    ['南京大学',['朱鑫燊']],
+    ['南京航空航天大学',['鲁哲宇','叶晨希']],
+    ['南京理工大学',['林曾诚']],
+    ['河海大学',['彭琪茗']],
+  ]},
+  { city:'厦门', coords:[118.09,24.48], schools:[
+    ['厦门大学',['周幸芮仟','朱姊殷']],
+  ]},
+  { city:'哈尔滨', coords:[126.63,45.75], schools:[
+    ['哈尔滨工业大学',['袁一备','刘佳鑫']],
+  ]},
+  { city:'秦皇岛', coords:[119.60,39.93], schools:[
+    ['东北大学（秦皇岛）',['雷晟杰']],
+    ['东北大学（秦皇岛分校）',['罗泽同']],
+  ]},
+  { city:'长春', coords:[125.32,43.82], schools:[
+    ['吉林大学',['王润峰']],
+  ]},
+  { city:'吉林市', coords:[126.55,43.84], schools:[
+    ['东北电力大学',['胡栗豪']],
+  ]},
+  { city:'大连', coords:[121.62,38.91], schools:[
+    ['大连海事大学',['赵晨皓']],
+  ]},
+  { city:'太原', coords:[112.55,37.87], schools:[
+    ['太原理工大学',['姚俊希']],
+  ]},
+  { city:'兰州', coords:[103.83,36.06], schools:[
+    ['兰州大学',['陈信']],
+  ]},
+  { city:'长沙', coords:[112.94,28.23], schools:[
+    ['湖南大学',['梁梓铃']],
+  ]},
+  { city:'武汉', coords:[114.31,30.59], schools:[
+    ['华中师范大学',['何佳金']],
+  ]},
+  { city:'杭州', coords:[120.16,30.29], schools:[
+    ['浙江大学',['何嘉鑫']],
+  ]},
+  { city:'深圳', coords:[114.06,22.55], schools:[
+    ['深圳理工大学',['邓可']],
+  ]},
+];
+
+CITIES.forEach(c => { c.count = c.schools.reduce((n,s)=>n+s[1].length,0); });
+CITIES.sort((a,b)=> b.count - a.count || a.city.localeCompare(b.city,'zh'));
+CITIES.forEach((c,i)=>{ c.idx = i; }); // 排序后重新编号，保证名单/地图索引一致
+
+/* ================= 统计 ================= */
+const totalPeople = CITIES.reduce((n,c)=>n+c.count,0);
+const totalSchools = CITIES.reduce((n,c)=>n+c.schools.length,0);
+document.getElementById('st-people').textContent = totalPeople;
+document.getElementById('st-school').textContent = totalSchools;
+document.getElementById('st-city').textContent = CITIES.length;
+
+/* ================= 颜色 / 大小（人数→顺序色阶） ================= */
+function ramp(n){
+  if(n>=7) return '#A83020';
+  if(n>=4) return '#C94532';
+  if(n>=2) return '#DE6F5C';
+  return '#F0A99B';
+}
+function markerSize(n){
+  if(n>=7) return 22;
+  if(n>=4) return 17;
+  if(n>=2) return 13;
+  return 9;
+}
+
+/* ================= 地图 ================= */
+echarts.registerMap('china', window.CHINA_GEO);
+const chart = echarts.init(document.getElementById('map'));
+
+const scatterData = CITIES.map(c => ({
+  name: c.city,
+  value: [c.coords[0], c.coords[1], c.count, c.idx]
+}));
+
+function tooltipHtml(c){
+  let h = `<div style="font-size:14px;font-weight:700;color:#9E2B20;margin-bottom:6px;">${c.city} · ${c.count}人</div>`;
+  c.schools.forEach(s=>{
+    h += `<div style="font-size:13px;margin-top:4px;"><b style="color:#4A3F33;">${s[0]}</b><div style="color:#7A6C5C;margin-top:1px;">${s[1].join('、')}</div></div>`;
+  });
+  return h;
+}
+
+chart.setOption({
+  tooltip:{
+    trigger:'item',
+    backgroundColor:'rgba(255,252,246,.97)',
+    borderColor:'#E2D5BC',
+    textStyle:{ color:'#4A3F33' },
+    padding:[10,14],
+    formatter: p => tooltipHtml(CITIES[p.data.value[3]])
+  },
+  geo:{
+    map:'china',
+    roam:true,
+    zoom:1.08,
+    itemStyle:{ areaColor:'#F1E8D8', borderColor:'#E0D2B6', borderWidth:1 },
+    emphasis:{ itemStyle:{ areaColor:'#EADCC4' }, label:{ show:false } },
+    label:{ show:false }
+  },
+  series:[{
+    name:'同学分布',
+    type:'scatter',
+    coordinateSystem:'geo',
+    zlevel:2,
+    data: scatterData,
+    symbolSize: v => markerSize(v[2]),
+    itemStyle:{
+      color: v => ramp(v.value[2]),
+      borderColor:'#FFFFFF',
+      borderWidth:2,
+      shadowBlur:10,
+      shadowColor:'rgba(160,60,40,.4)'
+    },
+    label:{
+      show:true,
+      position:'bottom',
+      distance:6,
+      color:'#6B5A48',
+      fontSize:12,
+      fontWeight:600,
+      formatter: p => `${p.name} ${p.value[2]}`
+    },
+    emphasis:{
+      scale:1.35,
+      itemStyle:{ shadowBlur:16, shadowColor:'rgba(160,60,40,.55)' }
+    }
+  }]
+});
+
+/* 点击地图标记 → 名单定位 */
+chart.on('click', p => {
+  const c = CITIES[p.data.value[3]];
+  scrollToCity(c);
+});
+chart.on('mouseover', p => {
+  chart.dispatchAction({ type:'highlight', seriesIndex:0, dataIndex: p.dataIndex });
+});
+chart.on('mouseout', p => {
+  chart.dispatchAction({ type:'downplay', seriesIndex:0, dataIndex: p.dataIndex });
+});
+
+function scrollToCity(c){
+  const el = document.getElementById('city-' + c.idx);
+  if(!el) return;
+  el.scrollIntoView({ behavior:'smooth', block:'center' });
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+/* ================= 名单 ================= */
+const listEl = document.getElementById('city-list');
+CITIES.forEach(c => {
+  const sec = document.createElement('section');
+  sec.className = 'city';
+  sec.id = 'city-' + c.idx;
+
+  const head = document.createElement('div');
+  head.className = 'city-head';
+  head.innerHTML = `<span class="city-name">${c.city}</span><span class="city-count">${c.count}人</span>`;
+  head.title = '在地图上定位';
+  head.addEventListener('click', () => {
+    chart.dispatchAction({ type:'showTip', seriesIndex:0, dataIndex: c.idx });
+    chart.dispatchAction({ type:'highlight', seriesIndex:0, dataIndex: c.idx });
+    setTimeout(()=> chart.dispatchAction({ type:'downplay', seriesIndex:0, dataIndex: c.idx }), 1600);
+  });
+
+  const schools = document.createElement('div');
+  schools.className = 'schools';
+  c.schools.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'school';
+    row.innerHTML = `<span class="school-name">${s[0]}</span><span class="students">${s[1].join('、')}</span>`;
+    schools.appendChild(row);
+  });
+
+  sec.appendChild(head);
+  sec.appendChild(schools);
+  listEl.appendChild(sec);
+});
+
+/* 窗口缩放自适应 */
+window.addEventListener('resize', ()=> chart.resize());
+</script>
+</body>
+</html>
