@@ -82,8 +82,8 @@
     overflow:hidden; /* 兜底：任何情况下提示框等浮层不得撑出横向滚动 */
   }
   #map{ width:100%; height:100%; min-height:520px; border-radius:16px; }
-  /* 地图手势完全交给 ECharts：禁止浏览器抢走双指缩放/页面缩放，避免与地图缩放叠加导致大小跳动、散点脱离地图 */
-  #map canvas{ touch-action:none; }
+ /* 地图手势完全交给 ECharts：禁止浏览器抢走双指缩放/页面缩放，避免与地图缩放叠加导致大小跳动、散点脱离地图 */
+  #map canvas, #map svg{ touch-action:none; }
 
   /* 地图图例 */
   .legend{
@@ -335,13 +335,15 @@ function markerSize(n){
 }
 
 /* ================= 地图 ================= */
-echarts.registerMap('china', window.CHINA_GEO);
-const chart = echarts.init(document.getElementById('map'));
+ echarts.registerMap('china', window.CHINA_GEO);
+ const chart = echarts.init(document.getElementById('map'), null, { renderer:'svg' });
 
-const scatterData = CITIES.map(c => ({
-  name: c.city,
-  value: [c.coords[0], c.coords[1], c.count, c.idx]
-}));
+ const scatterData = CITIES.map(c => ({
+   name: c.city,
+   value: [c.coords[0], c.coords[1], c.count, c.idx],
+   symbolSize: markerSize(c.count),
+   itemStyle: { color: ramp(c.count) }
+ }));
 
 function tooltipHtml(c){
   let h = `<div style="font-size:14px;font-weight:700;color:#9E2B20;margin-bottom:6px;">${c.city} · ${c.count}人</div>`;
@@ -370,23 +372,19 @@ chart.setOption({
     emphasis:{ itemStyle:{ areaColor:'#EADCC4' }, label:{ show:false } },
     label:{ show:false }
   },
-  series:[{
-    name:'同学分布',
-    type:'scatter',
-    coordinateSystem:'geo',
-    /* 不设 zlevel（默认 0）：散点与地图同画布。
-       之前用 zlevel:2 把散点放到独立画布，手势中 setOption 重绘散点层时
-       地图层画布会残留手势进行中的旧画面 → 红点与地图整体错位且不自愈。
-       同一画布上每次重绘原子地重画整帧，从结构上消除"图层冻结"类错位。 */
-    data: scatterData,
-    symbolSize: v => markerSize(v[2]),
-    itemStyle:{
-      color: v => ramp(v.value[2]),
-      borderColor:'#FFFFFF',
-      borderWidth:2,
-      shadowBlur:10,
-      shadowColor:'rgba(160,60,40,.4)'
-    },
+ series:[{
+   name:'同学分布',
+   type:'scatter',
+   coordinateSystem:'geo',
+   data: scatterData,
+   symbolSize: 10,
+   animationDurationUpdate: 0,
+   itemStyle:{
+     borderColor:'#FFFFFF',
+     borderWidth:2,
+     shadowBlur:10,
+     shadowColor:'rgba(160,60,40,.4)'
+   },
     label:{
       show:true,
       position:'bottom',
