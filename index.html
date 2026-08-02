@@ -177,6 +177,11 @@
   .city-head:hover{ transform:translateX(3px); }
   .city-name{ font-size:16px; font-weight:700; color:var(--accent); letter-spacing:2px; }
   .city-count{ font-size:12px; color:#fff; background:var(--accent-2); border-radius:999px; padding:1px 9px; }
+  .city-province{ font-size:12px; color:#B9AC96; margin:0 2px 0 6px; }
+  /* 缩放/拖拽时禁用圆点和标签的过渡动画，减少移动端卡顿 */
+  #dot-overlay.zooming .city-dot .dot-circle,
+  #dot-overlay.zooming .city-dot .dot-label{ transition:none !important; }
+
   .schools{ padding-left:10px; }
   .school{ display:flex; align-items:baseline; gap:8px; padding:4px 0; }
   .school-name{ font-size:14px; font-weight:600; color:var(--ink); white-space:nowrap; }
@@ -264,14 +269,14 @@
   </aside>
 </main>
 
-<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.1</footer>
+<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.2</footer>
 
 <script src="assets/echarts.min.js"></script>
 <script src="assets/china-map.js"></script>
 <script>
 /* ================= 数据 ================= */
 const CITIES = [
-  { city:'北京', coords:[116.41,39.90], schools:[
+  { city:'北京', province:'北京市', coords:[116.41,39.90], schools:[
     ['清华大学',['万柯杏']],
     ['北京航空航天大学',['陈牧逸']],
     ['中国农业大学',['余承艾狄','吴振东']],
@@ -281,70 +286,70 @@ const CITIES = [
     ['中央财经大学',['白雨涵']],
     ['中国地质大学',['舒阳洋']],
   ]},
-  { city:'天津', coords:[117.19,39.13], schools:[
+  { city:'天津', province:'天津市', coords:[117.19,39.13], schools:[
     ['南开大学',['李俊宁','袁奥翔']],
     ['天津大学',['蒋思捷','刘思远']],
   ]},
-  { city:'上海', coords:[121.47,31.23], schools:[
+  { city:'上海', province:'上海市', coords:[121.47,31.23], schools:[
     ['上海财经大学',['王月']],
     ['华东理工大学',['王博为']],
     ['华东师范大学',['刘子涵']],
   ]},
-  { city:'重庆', coords:[106.55,29.56], schools:[
+  { city:'重庆', province:'重庆市', coords:[106.55,29.56], schools:[
     ['重庆大学',['刘谨瑜','何永康']],
     ['联勤保障部队工程大学',['李泽盟']],
   ]},
-  { city:'成都', coords:[104.07,30.67], schools:[
+  { city:'成都', province:'四川省', coords:[104.07,30.67], schools:[
     ['电子科技大学',['龚飞陶','胡馨月','王羿丹','赵允坚']],
     ['西南财经大学',['王浩宇','魏佳玲']],
     ['四川大学',['罗钰婷','夏竹雅']],
     ['西南交通大学',['陈以珊','胥逸凡']],
     ['西南石油大学',['李嘉帆','何骏铜']],
   ]},
-  { city:'雅安', coords:[103.04,30.01], schools:[
+  { city:'雅安', province:'四川省', coords:[103.04,30.01], schools:[
     ['四川农业大学',['黄逸','毛毓烨','黄子轩']],
   ]},
-  { city:'南京', coords:[118.80,32.06], schools:[
+  { city:'南京', province:'江苏省', coords:[118.80,32.06], schools:[
     ['南京大学',['朱鑫燊']],
     ['南京航空航天大学',['鲁哲宇','叶晨希']],
     ['南京理工大学',['林曾诚']],
     ['河海大学',['彭琪茗']],
   ]},
-  { city:'厦门', coords:[118.09,24.48], schools:[
+  { city:'厦门', province:'福建省', coords:[118.09,24.48], schools:[
     ['厦门大学',['周幸芮仟','朱姊殷']],
   ]},
-  { city:'哈尔滨', coords:[126.63,45.75], schools:[
+  { city:'哈尔滨', province:'黑龙江省', coords:[126.63,45.75], schools:[
     ['哈尔滨工业大学',['袁一备','刘佳鑫']],
   ]},
-  { city:'秦皇岛', coords:[119.60,39.93], schools:[
+  { city:'秦皇岛', province:'河北省', coords:[119.60,39.93], schools:[
     ['东北大学（秦皇岛）',['雷晟杰']],
     ['东北大学（秦皇岛分校）',['罗泽同']],
   ]},
-  { city:'长春', coords:[125.32,43.82], schools:[
+  { city:'长春', province:'吉林省', coords:[125.32,43.82], schools:[
     ['吉林大学',['王润峰']],
   ]},
-  { city:'吉林市', coords:[126.55,43.84], schools:[
+  { city:'吉林市', province:'吉林省', coords:[126.55,43.84], schools:[
     ['东北电力大学',['胡栗豪']],
   ]},
-  { city:'大连', coords:[121.62,38.91], schools:[
+  { city:'大连', province:'辽宁省', coords:[121.62,38.91], schools:[
     ['大连海事大学',['赵晨皓']],
   ]},
-  { city:'太原', coords:[112.55,37.87], schools:[
+  { city:'太原', province:'山西省', coords:[112.55,37.87], schools:[
     ['太原理工大学',['姚俊希']],
   ]},
-  { city:'兰州', coords:[103.83,36.06], schools:[
+  { city:'兰州', province:'甘肃省', coords:[103.83,36.06], schools:[
     ['兰州大学',['陈信']],
   ]},
-  { city:'长沙', coords:[112.94,28.23], schools:[
+  { city:'长沙', province:'湖南省', coords:[112.94,28.23], schools:[
     ['湖南大学',['梁梓铃']],
   ]},
-  { city:'武汉', coords:[114.31,30.59], schools:[
+  { city:'武汉', province:'湖北省', coords:[114.31,30.59], schools:[
     ['华中师范大学',['何佳金']],
   ]},
-  { city:'杭州', coords:[120.16,30.29], schools:[
+  { city:'杭州', province:'浙江省', coords:[120.16,30.29], schools:[
     ['浙江大学',['何嘉鑫']],
   ]},
-  { city:'深圳', coords:[114.06,22.55], schools:[
+  { city:'深圳', province:'广东省', coords:[114.06,22.55], schools:[
     ['深圳理工大学',['邓可']],
   ]},
 ];
@@ -394,6 +399,7 @@ chart.setOption({
 
 /* ---- 创建 DOM 红点 ---- */
 const overlay = document.getElementById('dot-overlay');
+overlay.classList.add('zooming'); // 初始加载阶段禁用过渡
 const tooltipEl = document.getElementById('custom-tooltip');
 	let tooltipSticky = false;
 
@@ -510,7 +516,14 @@ function scheduleUpdateDots(){
   });
 }
 /* 地图每次 roam 时：收起提示框、解除 sticky 状态、节流刷新红点 */
-chart.on('georoam', () => { hideTooltip(); tooltipSticky = false; scheduleUpdateDots(); });
+let _zoomTimer = null;
+/* 缩放/拖拽开始时添加 .zooming 类禁用过渡，结束后 400ms 移除 */
+function _markZooming(){
+  if(!_zoomTimer) overlay.classList.add('zooming');
+  clearTimeout(_zoomTimer);
+  _zoomTimer = setTimeout(() => { overlay.classList.remove('zooming'); _zoomTimer = null; }, 400);
+}
+chart.on('georoam', () => { hideTooltip(); tooltipSticky = false; scheduleUpdateDots(); _markZooming(); });
 
 /* 手机端拖拽/缩放时让红点不拦截手势（overlay.dragging → pointer-events:none） */
 const mapBox = document.getElementById('map-box');
@@ -547,7 +560,7 @@ CITIES.forEach(c => {
   sec.id = 'city-' + c.idx;
   const head = document.createElement('div');
   head.className = 'city-head';
-  head.innerHTML = '<span class="city-name">' + c.city + '</span><span class="city-count">' + c.count + '人</span>';
+  head.innerHTML = '<span class="city-name">' + c.city + '</span><span class="city-province">' + c.province + '</span><span class="city-count">' + c.count + '人</span>';
   head.title = '在地图上定位';
   head.addEventListener('click', () => flyToCity(c));
   const schools = document.createElement('div');
@@ -567,6 +580,8 @@ CITIES.forEach(c => {
    注册一次即可覆盖后续所有动画（包括用户拖拽后的收尾） */
 chart.on('finished', updateDots);
 updateDots();
+/* 初始渲染完成，移除 zoom 状态 */
+setTimeout(() => overlay.classList.remove('zooming'), 500);
 </script>
 </body>
 </html>
