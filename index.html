@@ -395,6 +395,7 @@ chart.setOption({
 /* ---- 创建 DOM 红点 ---- */
 const overlay = document.getElementById('dot-overlay');
 const tooltipEl = document.getElementById('custom-tooltip');
+	let tooltipSticky = false;
 
 const dotEls = CITIES.map(c => {
   const el = document.createElement('div');
@@ -413,6 +414,7 @@ const dotEls = CITIES.map(c => {
 
   el.addEventListener('click', e => {
     e.stopPropagation();
+	    tooltipSticky = true;
     showTooltip(c, el);
     scrollToCity(c);
   });
@@ -422,7 +424,7 @@ const dotEls = CITIES.map(c => {
   });
   el.addEventListener('mouseleave', () => {
     el.classList.remove('active');
-    hideTooltip();
+    if(!tooltipSticky) hideTooltip();
   });
   return el;
 });
@@ -448,7 +450,7 @@ function showTooltip(c, anchorEl){
 }
 function hideTooltip(){ tooltipEl.style.display = 'none'; }
 document.getElementById('map-box').addEventListener('click', e => {
-  if(!e.target.closest('.city-dot')) hideTooltip();
+	  if(!e.target.closest('.city-dot') && !tooltipSticky) hideTooltip();
 });
 
 function scrollToCity(c){
@@ -498,19 +500,28 @@ function updateDots(){
   if(tip) tip.classList.toggle('hide', showLabels);
 }
 
-/* 最关键的一行：地图每一次 roam（拖动/缩放）都重新计算红点像素坐标 */
-chart.on('georoam', updateDots);
+/* RAF 节流：连续 georoam 时合并 DOM 更新到一个帧，避免双指缩放掉帧 */
+let _updateDotsRAF = null;
+function scheduleUpdateDots(){
+  if(_updateDotsRAF) return;
+  _updateDotsRAF = requestAnimationFrame(() => {
+    _updateDotsRAF = null;
+    updateDots();
+  });
+}
+/* 地图每次 roam 时：收起提示框、解除 sticky 状态、节流刷新红点 */
+chart.on('georoam', () => { hideTooltip(); tooltipSticky = false; scheduleUpdateDots(); });
 
 /* 手机端拖拽/缩放时让红点不拦截手势（overlay.dragging → pointer-events:none） */
 const mapBox = document.getElementById('map-box');
 mapBox.addEventListener('touchstart', () => overlay.classList.add('dragging'), { passive:true });
 mapBox.addEventListener('touchend', () => overlay.classList.remove('dragging'));
 mapBox.addEventListener('touchcancel', () => overlay.classList.remove('dragging'));
-mapBox.addEventListener('touchmove', hideTooltip, { passive:true, capture:true });
 
 window.addEventListener('resize', () => {
   chart.resize();
   hideTooltip();
+  tooltipSticky = false;
   updateDots();
 });
 
@@ -520,6 +531,7 @@ function flyToCity(c){
   chart.setOption({ geo:{ center: c.coords, zoom } }, { lazyUpdate:true });
   requestAnimationFrame(() => {
    updateDots();
+   tooltipSticky = true;
    showTooltip(c, dotEls[c.idx]);
  });
 setTimeout(updateDots, 300);
