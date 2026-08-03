@@ -320,7 +320,7 @@
   </aside>
 </main>
 
-<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.3.6</footer>
+<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.3.7</footer>
 
 <div class="map-fullscreen" id="map-fullscreen" hidden>
   <button type="button" class="map-fullscreen-close" id="map-fullscreen-close" aria-label="关闭全屏地图">×</button>
@@ -671,15 +671,12 @@ window.addEventListener('resize', () => {
 /* 名单点击 → 地图飞到对应城市 */
 function flyToCity(c){
   const zoom = Math.max(getGeoZoom(), 2.5);
-  chart.setOption({ geo:{ center: c.coords, zoom } }, { lazyUpdate:true });
-  requestAnimationFrame(() => {
-   updateDots();
-   tooltipSticky = true;
-   showTooltip(c, dotEls[c.idx].el);
- });
-setTimeout(updateDots, 300);
-setTimeout(updateDots, 800);
-setTimeout(updateDots, 1500);
+  /* animationDurationUpdate:0 让本次定位即时到位：
+     否则地图画布会平滑飞 500ms，而 DOM 红点第一帧就已到终点，两者短暂分离 */
+  chart.setOption({ animationDurationUpdate:0, geo:{ center: c.coords, zoom } });
+  updateDots();
+  tooltipSticky = true;
+  showTooltip(c, dotEls[c.idx].el);
 }
 
 /* ================= 名单 ================= */
