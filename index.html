@@ -111,7 +111,24 @@
     pointer-events:none;
     transition:opacity .35s ease, transform .35s ease;
   }
- .map-tip.hide{ opacity:0; transform:translateY(-8px); }
+  .map-tip.hide{ opacity:0; transform:translateY(-8px); }
+
+  /* 查看全屏地图按钮 */
+  .fullscreen-btn{
+    position:absolute; top:12px; right:12px; z-index:30;
+    display:inline-flex; align-items:center;
+    padding:7px 13px;
+    background:rgba(255,255,255,.94); border:1px solid var(--line);
+    border-radius:999px;
+    color:var(--accent); font-size:13px; font-weight:600;
+    box-shadow:0 2px 10px rgba(0,0,0,.10);
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .fullscreen-btn:hover{
+    background:#fff; transform:translateY(-1px);
+    box-shadow:0 4px 14px rgba(0,0,0,.14);
+  }
 
   /* ---------- DOM 红点覆盖层 ---------- */
   /* 红点不用 ECharts scatter（独立画布/SVG 层在手势中与 geo 可能失步导致错位），
@@ -189,6 +206,35 @@
 
   footer{ text-align:center; font-size:12px; color:#B9AC96; padding:0 0 12px; letter-spacing:2px; }
 
+  /* ---------- 全屏地图预览层 ---------- */
+  .map-fullscreen{
+    position:fixed; inset:0; z-index:1000;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+    background:rgba(22,15,10,.96);
+  }
+  .map-fullscreen[hidden]{ display:none; }
+  .map-fullscreen img{
+    max-width:100%; max-height:100%;
+    object-fit:contain;
+    border-radius:6px;
+    box-shadow:0 8px 40px rgba(0,0,0,.45);
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .map-fullscreen-close{
+    position:absolute; z-index:1;
+    top:max(16px, env(safe-area-inset-top));
+    right:max(16px, env(safe-area-inset-right));
+    width:46px; height:46px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,.35);
+    background:rgba(0,0,0,.35); color:#fff;
+    font-size:28px; line-height:1; cursor:pointer;
+    box-shadow:0 2px 12px rgba(0,0,0,.25);
+  }
+  .map-fullscreen-close:hover{ background:rgba(0,0,0,.55); }
+
   @media (max-width:960px){
     main{ flex-direction:column; }
     /* 纵向布局下 #map-box 若仍参与 flex 伸缩，会被不可收缩的名单挤成矮盒（实测可塌到 15px），
@@ -214,7 +260,11 @@
     #map{ height:52vh; min-height:300px; max-height:560px; }
     #list{ max-height:none; padding:12px 12px 16px; }
     .city-head{ padding:9px 10px; }
-    .map-tip{ left:8px; top:8px; font-size:11px; padding:4px 10px; }
+    .map-tip{
+      left:8px; top:8px; font-size:11px; padding:4px 10px;
+      max-width:calc(100% - 124px); line-height:1.35;
+    }
+    .fullscreen-btn{ top:8px; right:8px; padding:6px 10px; font-size:12px; }
     .legend{ left:8px; bottom:8px; font-size:11px; padding:6px 10px; gap:8px; }
     footer{ font-size:11px; letter-spacing:1px; margin-top:auto; padding-bottom:max(12px, env(safe-area-inset-bottom)); }
   }
@@ -260,6 +310,7 @@
       <span class="item"><span class="dot" style="width:24px;height:24px;background:#A83020"></span>7+</span>
     </div>
     <div class="map-tip" id="map-tip">🔍 拖动平移 · 滚动/双指缩放地图，放大后显示城市标注</div>
+    <button type="button" class="fullscreen-btn" id="fullscreen-btn">查看全屏地图</button>
   </div>
 
   <aside id="list">
@@ -269,7 +320,12 @@
   </aside>
 </main>
 
-<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.2.1</footer>
+<footer>四川省绵阳中学 · 高2023级15班 · 蹭饭地图 v1.3</footer>
+
+<div class="map-fullscreen" id="map-fullscreen" hidden>
+  <button type="button" class="map-fullscreen-close" id="map-fullscreen-close" aria-label="关闭全屏地图">×</button>
+  <img src="蹭饭地图.png" alt="15班蹭饭地图全屏">
+</div>
 
 <script src="assets/echarts.min.js"></script>
 <script src="assets/china-map.js"></script>
@@ -622,6 +678,45 @@ chart.on('finished', updateDots);
 updateDots();
 /* 初始渲染完成，移除 zoom 状态 */
 setTimeout(() => overlay.classList.remove('zooming'), 500);
+
+/* ================= 查看全屏地图 ================= */
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+const fullscreenLayer = document.getElementById('map-fullscreen');
+const fullscreenImage = fullscreenLayer.querySelector('img');
+
+function closeFullscreenLayer(){ fullscreenLayer.hidden = true; }
+
+function closeFullscreenMap(){
+  if(document.fullscreenElement === fullscreenLayer){
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if(exit) exit.call(document).catch(closeFullscreenLayer);
+  } else {
+    closeFullscreenLayer();
+  }
+}
+
+fullscreenBtn.addEventListener('click', () => {
+  fullscreenLayer.hidden = false;
+  const enter = fullscreenLayer.requestFullscreen || fullscreenLayer.webkitRequestFullscreen;
+  if(enter) Promise.resolve(enter.call(fullscreenLayer)).catch(() => {});
+});
+
+document.getElementById('map-fullscreen-close').addEventListener('click', closeFullscreenMap);
+
+fullscreenLayer.addEventListener('click', e => {
+  if(e.target === fullscreenLayer || e.target === fullscreenImage) closeFullscreenMap();
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if(!document.fullscreenElement) closeFullscreenLayer();
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if(!document.webkitFullscreenElement) closeFullscreenLayer();
+});
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !fullscreenLayer.hidden) closeFullscreenMap();
+});
 </script>
 </body>
 </html>
