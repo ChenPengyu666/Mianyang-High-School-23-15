@@ -621,11 +621,45 @@ function _markZooming(){
 }
 chart.on('georoam', () => { hideTooltip(); tooltipSticky = false; scheduleUpdateDots(); _markZooming(); });
 
-/* 手机端拖拽/缩放时让红点不拦截手势（overlay.dragging → pointer-events:none） */
+/* 手机端拖拽/缩放时让红点不拦截手势（overlay.dragging → pointer-events:none）。
+   注意：从红点上开始的手势不能加 dragging——触摸期间红点被禁用 pointer-events，
+   真实手机（尤其 iOS）上合成的 click 会丢失目标，导致点红点弹不出名单。
+   改为：地图空白处开始手势才屏蔽红点；红点上开始的手势保持可点，并用 touchend 直接弹出。 */
 const mapBox = document.getElementById('map-box');
-mapBox.addEventListener('touchstart', () => overlay.classList.add('dragging'), { passive:true });
-mapBox.addEventListener('touchend', () => overlay.classList.remove('dragging'));
-mapBox.addEventListener('touchcancel', () => overlay.classList.remove('dragging'));
+mapBox.addEventListener('touchstart', e => {
+  const dot = e.target.closest && e.target.closest('.city-dot');
+  if(dot){
+    const t = e.touches[0];
+    dot._tap = { x:t.clientX, y:t.clientY, moved:false };
+    return;
+  }
+  overlay.classList.add('dragging');
+}, { passive:true });
+mapBox.addEventListener('touchmove', e => {
+  const dot = e.target.closest && e.target.closest('.city-dot');
+  if(dot && dot._tap){
+    const t = e.touches[0];
+    if(Math.abs(t.clientX - dot._tap.x) > 8 || Math.abs(t.clientY - dot._tap.y) > 8) dot._tap.moved = true;
+  }
+}, { passive:true });
+mapBox.addEventListener('touchend', e => {
+  overlay.classList.remove('dragging');
+  const dot = e.target.closest && e.target.closest('.city-dot');
+  if(dot && dot._tap && !dot._tap.moved){
+    dot._tap = null;
+    const c = CITIES[+dot.dataset.idx];
+    if(c){
+      tooltipSticky = true;
+      showTooltip(c, dot);
+      if(!isTouchDevice) scrollToCity(c);
+    }
+  }
+});
+mapBox.addEventListener('touchcancel', e => {
+  overlay.classList.remove('dragging');
+  const dot = e.target.closest && e.target.closest('.city-dot');
+  if(dot) dot._tap = null;
+});
 
 window.addEventListener('resize', () => {
   chart.resize();
